@@ -316,7 +316,7 @@ class GUI:
     
     def __init__(self, ip_address, port):
         self.server = socket(AF_INET, SOCK_STREAM)
-        self.server.connect((ip_address, port))
+        self.server.connect((ip_address, int(port)))
 
         self.Window = tk.Tk()
         self.Window.withdraw()
@@ -723,6 +723,72 @@ def show_my_camera(flag = True):
             #     continue
                 
 
+
+class connect():
+    def __init__(self):
+        self.Window = tk.Tk()
+        self.Window.withdraw()
+        self.login = tk.Toplevel()
+        def Re(event = None):
+            tmp = threading.Thread(self.goAhead(self.userEntryName.get(), self.roomEntryName.get()))
+            tmp.start()
+        self.login.bind("<Return>", Re)
+        self.login.protocol('WM_DELETE_WINDOW', self.close)
+        self.login.title("Connect")
+        self.login.resizable(width=False, height=False)
+        self.login.configure(width=400, height=350)
+
+        #photo = ImageTk.PhotoImage(Image.open('bg.png').resize((470, 550), Image.ANTIALIAS))  
+        photo = ImageTk.PhotoImage(logo.resize((470, 550), Image.ANTIALIAS))  
+        
+        self.bg= tk.Label(self.login, image= photo, compound = tk.CENTER)
+        self.bg.place(relwidth=1, relheight=1)
+        self.pls = tk.Label(self.login, 
+                            text="Please Connect to the server", 
+                            justify=tk.CENTER,
+                            font=("Comic Sans MS", 16, "bold"),
+                            bg='papayawhip',
+                            fg='sienna')
+
+        self.pls.place(relheight=0.15, relx=0.5, rely=0.15, anchor='center')
+
+        self.userLabelName = tk.Label(self.login, text="IP: ", font=("Comic Sans MS", 11, "bold"),bg="papayawhip", fg='sienna')
+        # self.userLabelName.config(bg='SystemTransparent')
+        self.userLabelName.place(relwidth=0.3,relheight=0.1, relx=0.15, rely=0.3)
+
+        self.userEntryName = tk.Entry(self.login, font="Helvetica 12",bg='papayawhip', fg='sienna')
+        self.userEntryName.place(relwidth=0.4 ,relheight=0.1, relx=0.45, rely=0.3)
+        self.userEntryName.focus()
+
+        self.roomLabelName = tk.Label(self.login, text="Port: ", font=("Comic Sans MS", 11, "bold"), bg='papayawhip', fg='sienna')
+        self.roomLabelName.place(relwidth=0.3,relheight=0.1, relx=0.15, rely=0.45)
+
+        self.roomEntryName = tk.Entry(self.login, font="Helvetica 11", show="*", bg='papayawhip', fg='sienna')
+        self.roomEntryName.place(relwidth=0.4 ,relheight=0.1, relx=0.45, rely=0.45)
+        
+        self.go = tk.Button(self.login, 
+                            text="CONTINUE", 
+                            font=("Comic Sans MS", 12, "bold"), 
+                            bg='tan',
+                            fg='sienna',
+                            command = lambda: self.goAhead(self.userEntryName.get(), self.roomEntryName.get()))
+
+        self.go.place(relx=0.35, rely=0.62)
+        self.Window.mainloop()
+        
+    
+    def goAhead(self, username, room_id=0):
+        self.login.destroy()
+        self.Window.destroy()
+        GUI(username, room_id)
+    
+    def close(self):
+        self.login.destroy()
+        self.Window.destroy()
+        print("Quit before connect!")
+        
+
+
 if __name__ == "__main__":
     """ host = socket.gethostbyname('DESKTOP-UQ6FTAP')
     print(host) """
@@ -731,9 +797,10 @@ if __name__ == "__main__":
     # sys.exit(0)
     # ip_address = "192.168.31.39" # Redmi 5G
     # ip_address = "10.181.199.111"
-    ip_address = "127.0.0.1"
+    connect()
+    """ ip_address = "127.0.0.1"
     port = 40
-    g = GUI(ip_address, port)
+    g = GUI(ip_address, port) """
 
     import sys
     sys.exit(0)
