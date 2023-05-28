@@ -22,6 +22,7 @@ else:
     with open('./bg.png', 'wb') as w:  # 创建临时的文件
     # 把这个one图片解码出来，写入文件中去
         w.write(logo)
+    logo = Image.open('bg.png')
     
 """ with open('./bg.png', 'wb') as w:  # 创建临时的文件
     # 把这个one图片解码出来，写入文件中去
@@ -29,11 +30,24 @@ else:
 
 
 global_frame = None
+
 global_videoing = False
-global_video_number = 0
+# global_video_number = 0
 GLOBAL_restart = False
+global_connected = {}
 
+global_idx = 0
 
+    # def set_global_idx(self, local_idx):
+    #     self.global_idx = local_idx
+
+        # global global_connected
+
+# global_video_number -= 1
+# if global_video_number == 0:
+#     global_videoing = False
+# print(f'Finished chat with {global_video_number + 1}; Current state: on video = {global_videoing}, current video cnt = {global_video_number}')
+                
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16    # 格式
@@ -41,13 +55,35 @@ CHANNELS = 2    # 输入/输出通道数
 RATE = 44100    # 音频数据的采样频率
 RECORD_SECONDS = 0.5    # 记录秒
 
-def check_GLOBAL_restart():
+def check_GLOBAL_restart(local_idx = None):
     global global_videoing 
-    global global_video_number 
+    # global global_video_number 
     global GLOBAL_restart 
+    global global_connected
     if GLOBAL_restart:
         global_videoing = False
-        global_video_number = 0
+        # global_video_number = 0
+        global_connected[local_idx] = False
+        return True
+    return False
+
+def check_GLOBAL_connected(local_idx = None):
+    global global_videoing 
+    # global global_video_number 
+    global GLOBAL_restart 
+    global global_connected
+    if not global_connected[local_idx]:
+        # global_video_number -= 1
+        # if global_video_number == 0:
+        #     global_videoing = False
+        global_videoing = False
+        for connected in global_connected.values():
+            if connected:
+                global_videoing = True
+                break
+        print(f'<check global connected> Finished chat with #{local_idx}; Current state: on video = {global_videoing}, {global_connected}')
+        return True
+    return False  
 
 class Audio_Server(threading.Thread):
     def __init__(self, port, version) :
@@ -69,10 +105,15 @@ class Audio_Server(threading.Thread):
             self.stream.close()     # 终止流
         self.p.terminate()      # 终止会话
 
+    def set_global_idx(self, local_idx):
+        self.global_idx = local_idx
+
     def run(self):
         global global_videoing 
-        global global_video_number 
+        # global global_video_number 
         global GLOBAL_restart 
+        global global_connected
+
         print("Audio channel starts...")
         self.sock.bind(self.ADDR)
         self.sock.listen(1)
@@ -87,15 +128,24 @@ class Audio_Server(threading.Thread):
                                   frames_per_buffer = CHUNK
                                   )
         while global_videoing:
-            check_GLOBAL_restart()
+            if check_GLOBAL_connected(self.global_idx):
+                break  
+            if check_GLOBAL_restart(self.global_idx):
+                break
             while global_videoing and len(data) < payload_size:
-                check_GLOBAL_restart()
+                if check_GLOBAL_connected(self.global_idx):
+                    break  
+                if check_GLOBAL_restart(self.global_idx):
+                    break
                 data += conn.recv(81920)
             packed_size = data[:payload_size]
             data = data[payload_size:]
             msg_size = struct.unpack("L", packed_size)[0]
             while global_videoing and len(data) < msg_size:
-                check_GLOBAL_restart()
+                if check_GLOBAL_connected(self.global_idx):
+                    break  
+                if check_GLOBAL_restart(self.global_idx):
+                    break
                 data += conn.recv(81920)
             frame_data = data[:msg_size]
             data = data[msg_size:]
@@ -122,9 +172,14 @@ class Audio_Client(threading.Thread):
             self.stream.stop_stream()
             self.stream.close()
         self.p.terminate()
+    def set_global_idx(self, local_idx):
+        self.global_idx = local_idx
     def run(self):
         while global_videoing:
-            check_GLOBAL_restart()
+            if check_GLOBAL_connected(self.global_idx):
+                break  
+            if check_GLOBAL_restart(self.global_idx):
+                break
             try:
                 self.sock.connect(self.ADDR)
                 break
@@ -141,7 +196,10 @@ class Audio_Client(threading.Thread):
                                 input=True,
                                 frames_per_buffer=CHUNK)
         while global_videoing and self.stream.is_active():
-            check_GLOBAL_restart()
+            if check_GLOBAL_connected(self.global_idx):
+                break  
+            if check_GLOBAL_restart(self.global_idx):
+                break
             frames = []
             for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
                 data = self.stream.read(CHUNK)
@@ -171,10 +229,13 @@ class Video_Server(threading.Thread):
             cv2.destroyAllWindows()
         except:
             pass
+    def set_global_idx(self, local_idx):
+        self.global_idx = local_idx
     def run(self):
         global global_videoing
-        global global_video_number
-        local_video_number = global_video_number
+        # global global_video_number
+        global global_connected
+        # local_video_number = global_video_number
         print("VIDEO channel starts...")
         self.sock.bind(self.ADDR)
         self.sock.listen(1)
@@ -182,28 +243,43 @@ class Video_Server(threading.Thread):
         print("VIDEO channel success connected...")
         data = "".encode("utf-8")
         payload_size = struct.calcsize("L")		# 结果为4
-        cv2.namedWindow(f'Server Camera {local_video_number}', cv2.WINDOW_NORMAL)
+        cv2.namedWindow(f'Server Camera #{self.global_idx}', cv2.WINDOW_NORMAL)
         while global_videoing:
-            check_GLOBAL_restart()
+            if check_GLOBAL_connected(self.global_idx):
+                break  
+            if check_GLOBAL_restart(self.global_idx):
+                break
             while global_videoing and len(data) < payload_size:
-                check_GLOBAL_restart()
+                if check_GLOBAL_connected(self.global_idx):
+                    break  
+                if check_GLOBAL_restart(self.global_idx):
+                    break
                 data += conn.recv(81920)
             packed_size = data[:payload_size]
             data = data[payload_size:]
             msg_size = struct.unpack("L", packed_size)[0]
             while global_videoing and len(data) < msg_size:
-                check_GLOBAL_restart()
+                if check_GLOBAL_connected(self.global_idx):
+                    break  
+                if check_GLOBAL_restart(self.global_idx):
+                    break
                 data += conn.recv(81920)
             zframe_data = data[:msg_size]
             data = data[msg_size:]
             frame_data = zlib.decompress(zframe_data)
             frame = pickle.loads(frame_data)
-            cv2.imshow(f'Server Camera {local_video_number}', frame)
+            cv2.imshow(f'Server Camera #{self.global_idx}', frame)
             if cv2.waitKey(1) & 0xFF == 27:
-                global_video_number -= 1
-                if global_video_number == 0:
-                    global_videoing = False
-                print(f'Finished chat with {global_video_number + 1}; Current state: on video = {global_videoing}, current video cnt = {global_video_number}')
+                global_connected[self.global_idx] = False
+                # global_video_number -= 1
+                # if global_video_number == 0:
+                #     global_videoing = False
+                global_videoing = False
+                for connected in global_connected.values():
+                    if connected:
+                        global_videoing = True
+                        break
+                print(f'Finished chat with #{self.global_idx}; Current state: on video = {global_videoing}, {global_connected}')
                 break
 
 class Video_Client(threading.Thread):
@@ -232,6 +308,8 @@ class Video_Client(threading.Thread):
     def __del__(self) :
         self.sock.close()
         # self.cap.release()
+    def set_global_idx(self, local_idx):
+        self.global_idx = local_idx
 
     def is_connected(self, ):
         return self.connected
@@ -239,10 +317,14 @@ class Video_Client(threading.Thread):
     def run(self):
         global global_frame
         global global_videoing
-        global global_video_number
+        # global global_video_number
+        global global_connected
         # print("VIDEO client starts...")
         while global_videoing:
-            check_GLOBAL_restart()
+            if check_GLOBAL_connected(self.global_idx):
+                break  
+            if check_GLOBAL_restart(self.global_idx):
+                break
             try:
                 self.sock.connect(self.ADDR)
                 self.connected = True
@@ -253,7 +335,10 @@ class Video_Client(threading.Thread):
         # if global_videoing:
             # print("VIDEO client connected...")
         while global_videoing:
-            check_GLOBAL_restart()
+            if check_GLOBAL_connected(self.global_idx):
+                break  
+            if check_GLOBAL_restart(self.global_idx):
+                break
             # ret, frame = self.cap.read()
             if global_frame is None:
                 continue
@@ -269,23 +354,38 @@ class Video_Client(threading.Thread):
             try:
                 self.sock.sendall(struct.pack("L", len(zdata)) + zdata)
             except:
-                global_video_number -= 1
-                if global_video_number == 0:
-                    global_videoing = False
-                print(f'Finished chat with {global_video_number + 1}; Current state: on video = {global_videoing}, current video cnt = {global_video_number}')
+                global_connected[self.global_idx] = False
+                # global_video_number -= 1
+                # if global_video_number == 0:
+                    # global_videoing = False
+                global_videoing = False
+                for connected in global_connected.values():
+                    if connected:
+                        global_videoing = True
+                        break
+                print(f'<video client> Finished chat with #{self.global_idx}; Current state: on video = {global_videoing}, {global_connected}')
                 break
             # for i in range(self.interval):
             #     self.cap.read()
 
 
-def VIDEO_chat(ip, port1, port2):
+def VIDEO_chat(ip, port1, port2, local_idx):
     global global_videoing
-    global global_video_number
+    # global global_video_number
+    global global_connected 
+    # global global_idx 
 
     vclient = Video_Client(ip, port1, 1, 4) # ATTENTION: this IP1 is *my ip* !!!
     aclient = Audio_Client(ip, port1+1, 4) 
     vserver = Video_Server(port2, 4)
     aserver = Audio_Server(port2+1, 4)
+    # local_idx = global_idx
+    global_connected[local_idx] = True
+    vclient.set_global_idx(local_idx)
+    aclient.set_global_idx(local_idx)
+    vserver.set_global_idx(local_idx)
+    aserver.set_global_idx(local_idx)
+
     vclient.start()
     aclient.start()
     time.sleep(1)    # make delay to start server
@@ -293,22 +393,28 @@ def VIDEO_chat(ip, port1, port2):
     aserver.start()
     start_time = time.time()
     while global_videoing:
-        check_GLOBAL_restart()
+        if check_GLOBAL_connected(local_idx):
+            break  
+        if check_GLOBAL_restart(local_idx):
+            break
         time.sleep(1)
         vconnected = vclient.is_connected()
         if ( not vconnected ) and ( time.time() - start_time > 60) :
             print(f'Video & Audio connection: did not answer within one minute, they might be busy now. Please call later.')
-            global_video_number -= 1
-            if global_video_number == 0:
-                global_videoing = False
-            print(f'Finished chat with {global_video_number + 1}; Current state: on video = {global_videoing}, current video cnt = {global_video_number}')
+            # global_video_number -= 1
+            # if global_video_number == 0:
+            #     global_videoing = False
+            # global_connected[local_idx] = False
+            print(f'<chat runner> Finished chat with #{local_idx}; Current state: on video = {global_videoing} {global_connected}')
             sys.exit(0)
             break
         if  not vserver.is_alive() or not vclient.is_alive(): # one of them is down ...
             print("Video chat finished, connection lost or cut.")
+            global_connected[local_idx] = False
             sys.exit(0)
         if  not aserver.is_alive() or not aclient.is_alive(): # 
             print("Audio chat finished, connection lost or cut.")
+            global_connected[local_idx] = False
             sys.exit(0)
 
 
@@ -648,8 +754,10 @@ class GUI:
         self.entryMsg.delete(0, tk.END)
         global global_frame
         global global_videoing
-        global global_video_number
+        # global global_video_number
         global GLOBAL_restart
+        global global_idx
+        global global_connected
 
         try:
             ip = msg.split(' ', 2)[0]
@@ -666,18 +774,22 @@ class GUI:
         except:
             print(f'input video info is not correct: "{msg}"')
             return
-
-        global_videoing = True
-        if global_video_number == 0: # first time call up the video
+        
+        global_idx += 1
+        local_idx = global_idx
+        global_connected[local_idx] = True
+        if not global_videoing: # global_video_number == 0: # first time call up the video
+            global_videoing = True
             GLOBAL_restart = False # powerful !!!
             t1 = threading.Thread(target=get_my_camera)
             t1.start()
             t2 = threading.Thread(target=show_my_camera)
             t2.start()
-        global_video_number += 1
+        global_videoing = True
+        # global_video_number += 1
 
         # assert global_frame is not None
-        paras = (ip, port1, port2)
+        paras = (ip, port1, port2, local_idx)
         thread = threading.Thread(target = VIDEO_chat, args =paras)
         thread.start()
 
@@ -687,10 +799,18 @@ def get_my_camera(flag = True):
     if flag:
         global global_frame
         global global_videoing
-        global global_video_number
+        # global global_video_number
         cap = cv2.VideoCapture(0)
         while global_videoing and cap.isOpened():
-            check_GLOBAL_restart()
+
+            global_videoing = False
+            for connected in global_connected.values():
+                if connected:
+                    global_videoing = True
+                    break
+
+            if check_GLOBAL_restart():
+                break
             ret, frame = cap.read()
 
             # cv2.imshow("My Camera", frame) # showing my camera 
@@ -706,9 +826,11 @@ def get_my_camera(flag = True):
 def show_my_camera(flag = True):
     if flag:      
         global global_videoing
-        global global_video_number  
+        # global global_video_number  
         while global_videoing:
-            check_GLOBAL_restart()
+
+            if check_GLOBAL_restart():
+                break
             if global_frame is None:
                 continue
             cv2.namedWindow('My Camera', cv2.WINDOW_NORMAL)
@@ -717,7 +839,7 @@ def show_my_camera(flag = True):
             if cv2.waitKey(1) & 0xFF == 8: # Backspace
                 GLOBAL_restart = True
                 global_videoing = False
-                global_video_number = 0
+                # global_video_number = 0
                 break
             # if cv2.waitKey(1) & 0xFF == 27: # ESC
             #     continue
@@ -780,7 +902,12 @@ class connect():
     def goAhead(self, username, room_id=0):
         self.login.destroy()
         self.Window.destroy()
-        GUI(username, room_id)
+        try:
+            GUI(username, room_id)
+            import sys
+            sys.exit(0)
+        except:
+            print('Connect Failed')
     
     def close(self):
         self.login.destroy()
