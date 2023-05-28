@@ -163,6 +163,7 @@ class Server:
                             self.broadcast(message_to_send, connection, room_id)
 
                 else:
+                    connection.send("[SYSTEM] You have been removed since some ERROR\n".encode())
                     self.remove(connection, room_id)
             except Exception as e:
                 self.remove(connection, room_id)
@@ -195,7 +196,8 @@ class Server:
                     print('except')
                     #self.broadcast('someone receive info failed', client, room_id)
                     #client.close()
-                    #self.remove(client, room_id)
+                    client.send("[SYSTEM] You have been removed since some ERROR\n".encode())
+                    self.remove(client, room_id)
 
         total = 0
         print(file_name, lenOfFile)
@@ -208,10 +210,12 @@ class Server:
                         client.send(data)
                         time.sleep(0.1)
                     except:
+                        #client.close()
                         print('except')
                         #self.broadcast('someone receive mater failed', client, room_id)
                         #client.close()
-                        #self.remove(client, room_id)
+                        client.send("[SYSTEM] You have been removed since some ERROR\n".encode())
+                        self.remove(client, room_id)
         print("Sent")
         lock_file = False
 
@@ -226,7 +230,8 @@ class Server:
             try:
                 client.send(message_to_send.encode())
             except:
-                client.close()
+                #client.close()
+                client.send("[SYSTEM] You have been removed since some ERROR\n".encode())
                 self.remove(client, room_id)
         
     def broadcastspecial(self, message_to_send, connection, room_id):
@@ -238,7 +243,9 @@ class Server:
                 try:
                     client.send(message_to_send.encode())
                 except:
-                    client.close()
+                    print('except')
+                    #client.close()
+                    client.send("[SYSTEM] You have been removed since some ERROR\n".encode())
                     self.remove(client, room_id)       
 
     
@@ -270,7 +277,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    ip_address = "127.0.0.1"
+    ip_address = "192.168.31.39"
     port = 40
 
     s = Server()
