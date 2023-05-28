@@ -6,7 +6,7 @@ Our Leader:
 
 ![img](111.ico)
 
-members: 李熠星，吕嗣哲，王崇华，卢施宇
+members: Yi-xing Li，Lv sizhe，philipwangOvO，Rem_sy
 
 # 功能
 
@@ -102,18 +102,18 @@ members: 李熠星，吕嗣哲，王崇华，卢施宇
 
 # For More Help：
 
-* EXE 版本下载：
+* EXE 版本下载：（old version）
 
     链接: https://pan.baidu.com/s/1iJu3ue__-4gVSR7I8qZUjw?pwd=zajz 提取码: zajz 复制这段内容后打开百度网盘手机App，操作更方便哦
 
 * 联系:\
-    lyxing0@sjtu.edu.cn（李熠星）
+    lyxing0@sjtu.edu.cn（Yi-xing Li）
 
-    lllssszhezez@sjtu.edu.cn（吕嗣哲）
+    lllssszhezez@sjtu.edu.cn（Lv sizhe）
 
-    philipwang@sjtu.edu.cn（王崇华）
+    philipwang@sjtu.edu.cn（philipwangOvO）
     
-    rem_sy@sjtu.edu.cn（卢施宇）
+    rem_sy@sjtu.edu.cn（Rem_sy）
 
 * based on：\
     https://github.com/arijitiiest/Socket-Chat-App ，\
