@@ -85,10 +85,17 @@ members: 李熠星，吕嗣哲，王崇华，卢施宇
 
 5. 可能的优化方向
 
-    为用户添加以及个性化聊天框和头像，实现加入进行中视频的功能，美化视频聊天窗口，添加一对一传文件功能。。。
+    为用户添加以及个性化聊天框和头像，实现加入进行中视频的功能，美化视频聊天窗口，添加一对一传文件功能，使得client可以使用键盘输入要连接到主机ip和port（已更新）。。。
+
 
 
 
 # For More Help：
+
+* EXE 版本下载：
+
+    链接: https://pan.baidu.com/s/1iJu3ue__-4gVSR7I8qZUjw?pwd=zajz 提取码: zajz 复制这段内容后打开百度网盘手机App，操作更方便哦
+    
 * 联系:\
-    rem_lsy@163.com（卢施宇）
+    lllssszhezez@sjtu.edu.cn(吕嗣哲)\
+    rem_sy@sjtu.edu.cn（卢施宇）
