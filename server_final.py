@@ -82,7 +82,6 @@ class Server:
         room_id = connection.recv(1024*128).decode().replace("Join ", "")
         #print(user_id)
         
-        
         if room_id not in self.rooms:
             connection.send("New Group created\n".encode())
             global_registered_ports[room_id] = {}
@@ -91,12 +90,33 @@ class Server:
             self.co[room_id] = {}
         else:
             connection.send("Welcome to chat room\n".encode())
-
+        while user_id in self.id[room_id].values():
+            #self.rooms[room_id].append(connection)
+            connection.send('[SYSTEM] Error:\n'.encode())
+            connection.send('[SYSTEM] user_id has been used in this chatroom\n'.encode())
+            connection.send('[SYSTEM] you will be kicked out in 3s, please relog later\n'.encode())
+            time.sleep(3)
+            connection.send('[SYSTEM] Now Please relog\n'.encode())
+            connection.send('[SYSTEM] Please Enter your new user_id:(using send message)\n'.encode())
+            user_id = connection.recv(1024*128).decode()
+            connection.send('[SYSTEM] Please Enter your new room_id:(using send message)\n'.encode())
+            room_id = connection.recv(1024*128).decode()
+            #self.rooms[room_id].remove(connection)
+            #connection.close()
+            if room_id not in self.rooms:
+                connection.send("New Group created\n".encode())
+                global_registered_ports[room_id] = {}
+                self.user[room_id] = {}
+                self.id[room_id] = {}
+                self.co[room_id] = {}
+            else:
+                connection.send("Welcome to chat room\n".encode())
+        
         self.rooms[room_id].append(connection)
         self.user[room_id][user_id] = ip
         self.id[room_id][connection] = user_id
         self.co[room_id][user_id] = connection
-        
+    
         if (room_id, user_id) not in global_registered_clients:
             global_registered_clients.append((room_id, user_id))
         # ok, lsz just registed. we automatically assign port for him
@@ -149,6 +169,7 @@ class Server:
                 print(repr(e))
                 print("Client disconnected earlier")
                 break
+        
     
     
     def broadcastFile(self, connection, room_id, user_id):
@@ -249,7 +270,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    ip_address = "192.168.31.39"
+    ip_address = "127.0.0.1"
     port = 40
 
     s = Server()

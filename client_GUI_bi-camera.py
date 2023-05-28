@@ -1,46 +1,39 @@
-import socket as so
 import tkinter as tk
-from tkinter import font
-from tkinter import ttk
 from tkinter import filedialog
 import time
 import threading
 import os
-""" import pickle
-import zlib
-import struct """
 import cv2
-import numpy as np
-
-# from launch_video_chat import VIDEO_chat
 import sys
-import argparse
-
 from socket import *
-# import threading
-# import cv2
-import matplotlib.pyplot as plt
-from PIL import Image
-# import time
-# import os
-# import sys
+from PIL import Image, ImageTk
 import struct
 import zlib
 import pickle
-import json
+import pyaudio
+import base64
+from memory_pic import bg_png
+# 取base64图片
+logo = base64.b64decode(bg_png)
+# pyqt页面  base64转化QPixmap
+if os.path.exists('bg.png'):
+    logo = Image.open('bg.png')
+else:
+    with open('./bg.png', 'wb') as w:  # 创建临时的文件
+    # 把这个one图片解码出来，写入文件中去
+        w.write(logo)
+    
+""" with open('./bg.png', 'wb') as w:  # 创建临时的文件
+    # 把这个one图片解码出来，写入文件中去
+    w.write(logo) """
 
 
 global_frame = None
 global_videoing = False
 global_video_number = 0
 GLOBAL_restart = False
-'''
-global global_videoing
-global global_video_number
-'''
 
-import pyaudio
-import wave
+
 
 CHUNK = 1024
 FORMAT = pyaudio.paInt16    # 格式
@@ -338,32 +331,41 @@ class GUI:
         self.login.resizable(width=False, height=False)
         self.login.configure(width=400, height=350)
 
+        #photo = ImageTk.PhotoImage(Image.open('bg.png').resize((470, 550), Image.ANTIALIAS))  
+        photo = ImageTk.PhotoImage(logo.resize((470, 550), Image.ANTIALIAS))  
+        
+        self.bg= tk.Label(self.login, image= photo, compound = tk.CENTER)
+        self.bg.place(relwidth=1, relheight=1)
         self.pls = tk.Label(self.login, 
                             text="Please Login to a chatroom", 
                             justify=tk.CENTER,
-                            font="Helvetica 12 bold")
+                            font=("Comic Sans MS", 16, "bold"),
+                            bg='papayawhip',
+                            fg='sienna')
 
-        self.pls.place(relheight=0.15, relx=0.2, rely=0.07)
+        self.pls.place(relheight=0.15, relx=0.5, rely=0.15, anchor='center')
 
-        self.userLabelName = tk.Label(self.login, text="Username: ", font="Helvetica 11")
-        self.userLabelName.place(relheight=0.2, relx=0.1, rely=0.25)
+        self.userLabelName = tk.Label(self.login, text="Username: ", font=("Comic Sans MS", 11, "bold"),bg="papayawhip", fg='sienna')
+        # self.userLabelName.config(bg='SystemTransparent')
+        self.userLabelName.place(relwidth=0.3,relheight=0.1, relx=0.15, rely=0.3)
 
-        self.userEntryName = tk.Entry(self.login, font="Helvetica 12")
-        self.userEntryName.place(relwidth=0.4 ,relheight=0.1, relx=0.35, rely=0.30)
+        self.userEntryName = tk.Entry(self.login, font="Helvetica 12",bg='papayawhip', fg='sienna')
+        self.userEntryName.place(relwidth=0.4 ,relheight=0.1, relx=0.45, rely=0.3)
         self.userEntryName.focus()
 
-        self.roomLabelName = tk.Label(self.login, text="Room Id: ", font="Helvetica 12")
-        self.roomLabelName.place(relheight=0.2, relx=0.1, rely=0.40)
+        self.roomLabelName = tk.Label(self.login, text="Room Id: ", font=("Comic Sans MS", 11, "bold"), bg='papayawhip', fg='sienna')
+        self.roomLabelName.place(relwidth=0.3,relheight=0.1, relx=0.15, rely=0.45)
 
-        self.roomEntryName = tk.Entry(self.login, font="Helvetica 11", show="*")
-        self.roomEntryName.place(relwidth=0.4 ,relheight=0.1, relx=0.35, rely=0.45)
+        self.roomEntryName = tk.Entry(self.login, font="Helvetica 11", show="*", bg='papayawhip', fg='sienna')
+        self.roomEntryName.place(relwidth=0.4 ,relheight=0.1, relx=0.45, rely=0.45)
         
         self.go = tk.Button(self.login, 
                             text="CONTINUE", 
-                            font="Helvetica 12 bold", 
+                            font=("Comic Sans MS", 12, "bold"), 
+                            bg='tan',
+                            fg='sienna',
                             command = lambda: self.goAhead(self.userEntryName.get(), self.roomEntryName.get()))
-        #self.Window.bind('Return', self.sendButton(self.entryMsg.get()))
-
+    
         self.go.place(relx=0.35, rely=0.62)
 
         self.Window.protocol('WM_DELETE_WINDOW', self.logout)
@@ -392,56 +394,59 @@ class GUI:
         self.Window.deiconify()
         self.Window.title("CHATROOM")
         self.Window.resizable(width=False, height=False)
-        self.Window.configure(width=470, height=550, bg="#17202A")
+        self.Window.configure(width=470, height=550, bg="tan")
+
         self.chatBoxHead = tk.Label(self.Window, 
-                                    bg = "#17202A", 
-                                    fg = "#EAECEE", 
+                                    bg = "lightyellow", 
+                                    fg = "sienna", 
                                     text = self.name , 
-                                    font = "Helvetica 11 bold", 
+                                    font = ("Calibri", 13, "bold"), 
                                     pady = 5)
 
         self.chatBoxHead.place(relwidth = 1)
 
-        self.line = tk.Label(self.Window, width = 450, bg = "#ABB2B9") 
+        self.line = tk.Label(self.Window, width = 450, bg = "tan")
 		
         self.line.place(relwidth = 1, rely = 0.07, relheight = 0.012) 
 		
         self.textCons = tk.Text(self.Window, 
                                 width=20, 
                                 height=2, 
-                                bg="#17202A", 
-                                fg="#EAECEE", 
-                                font="Helvetica 11", 
+                                bg="lightyellow", 
+                                fg="sienna", 
+                                font=("Calibri", 11), 
                                 padx=5, 
-                                pady=5) 
+                                pady=5,
+                                ) 
 		
         self.textCons.place(relheight=0.745, relwidth=1, rely=0.08) 
-		
-        self.labelBottom = tk.Label(self.Window, bg="#ABB2B9", height=80) 
+
+        	
+        self.labelBottom = tk.Label(self.Window, bg="tan", height=80 ) 
 		
         self.labelBottom.place(relwidth = 1, 
 							    rely = 0.8) 
 		
         self.entryMsg = tk.Entry(self.labelBottom, 
-                                bg = "#2C3E50", 
-                                fg = "#EAECEE", 
-                                font = "Helvetica 11")
+                                bg = "lightyellow", 
+                                fg = "tan", 
+                                font = ("Calibri", 11))
         self.entryMsg.place(relwidth = 0.65, 
-							relheight = 0.03, 
+							relheight = 0.025, 
 							rely = 0.008, 
 							relx = 0.011) 
         self.entryMsg.focus()
 
         self.buttonMsg = tk.Button(self.labelBottom, 
 								text = "Send", 
-								font = "Helvetica 10 bold", 
+								font = ("Calibri", 11, "bold"), 
 								width = 16, 
-								bg = "#ABB2B9", 
+								bg = "chocolate", 
 								command = lambda : self.sendButton(self.entryMsg.get())) 
-        self.buttonMsg.place(relx = 0.68, 
+        self.buttonMsg.place(relx = 0.67, 
 							rely = 0.008, 
-							relheight = 0.03, 
-							relwidth = 0.18) 
+							relheight = 0.025, 
+							relwidth = 0.21) 
 
         ##############
         
@@ -449,49 +454,49 @@ class GUI:
 								text = "○", 
 								font = "Helvetica 10 bold", 
 								width = 8, 
-								bg = "#ABB2B9", 
+								bg = "chocolate", 
 								command = lambda : self.video(self.entryMsg.get())) 
         self.buttonClose.place(relx = 0.90, 
 							rely = 0.008, 
-							relheight = 0.03, 
-							relwidth = 0.08)
+							relheight = 0.025, 
+							relwidth = 0.09)
         ##############
 
-        self.labelFile = tk.Label(self.Window, bg="#ABB2B9", height=70) 
+        self.labelFile = tk.Label(self.Window, bg="tan", height=80) 
 		
         self.labelFile.place(relwidth = 1, 
 							    rely = 0.9) 
 		
         self.fileLocation = tk.Label(self.labelFile, 
                                 text = "Choose file to send",
-                                bg = "#2C3E50", 
-                                fg = "#EAECEE", 
-                                font = "Helvetica 11")
+                                bg = "lightyellow", 
+                                fg = "tan", 
+                                font = ("Calibri", 11))
         self.fileLocation.place(relwidth = 0.65, 
-                                relheight = 0.03, 
-                                rely = 0.008, 
+                                relheight = 0.025, 
+                                rely = 0.004, 
                                 relx = 0.011) 
 
         self.browse = tk.Button(self.labelFile, 
 								text = "Browse", 
-								font = "Helvetica 10 bold", 
+								font = ("Calibri", 11, "bold"), 
 								width = 13, 
-								bg = "#ABB2B9", 
+								bg = "chocolate", 
 								command = self.browseFile)
         self.browse.place(relx = 0.67, 
-							rely = 0.008, 
-							relheight = 0.03, 
+							rely = 0.004, 
+							relheight = 0.025, 
 							relwidth = 0.15) 
 
         self.sengFileBtn = tk.Button(self.labelFile, 
 								text = "Send", 
-								font = "Helvetica 10 bold", 
+								font = ("Calibri", 11, "bold"), 
 								width = 13, 
-								bg = "#ABB2B9", 
+								bg = "chocolate", 
 								command = self.sendFile)
         self.sengFileBtn.place(relx = 0.84, 
-							rely = 0.008, 
-							relheight = 0.03, 
+							rely = 0.004, 
+							relheight = 0.025, 
 							relwidth = 0.15)
     
 
@@ -502,6 +507,8 @@ class GUI:
 
         scrollbar.config(command = self.textCons.yview)
         self.textCons.config(state = tk.DISABLED)
+        
+        ##done
 
         
     def browseFile(self):
@@ -724,7 +731,7 @@ if __name__ == "__main__":
     # sys.exit(0)
     # ip_address = "192.168.31.39" # Redmi 5G
     # ip_address = "10.181.199.111"
-    ip_address = "192.168.31.39"
+    ip_address = "127.0.0.1"
     port = 40
     g = GUI(ip_address, port)
 
